@@ -50,7 +50,8 @@ def MainMenu():
     if API.authenticated:
         oc.add(DirectoryObject(key=Callback(LibraryMenu), title=L('My Library')))
         oc.add(DirectoryObject(key=Callback(PlaylistsMenu), title=L('Playlists')))
-        oc.add(DirectoryObject(key=Callback(StationsMenu), title=L('Stations')))
+        oc.add(DirectoryObject(key=Callback(StationsMenu), title=L('Recent Stations')))
+        oc.add(DirectoryObject(key=Callback(MyStationsMenu), title=L('My Stations')))
 
         if API.all_access:
             oc.add(DirectoryObject(key=Callback(GenresMenu), title=L('Genres')))
@@ -101,11 +102,26 @@ def PlaylistsMenu(id=None):
 ################################################################################
 @route(PREFIX + '/stationsmenu')
 def StationsMenu():
-    oc = ObjectContainer(title2=L('Stations'))
+    oc = ObjectContainer(title2=L('Recent Stations (Sorted by Date)'))
     oc.add(DirectoryObject(key=Callback(GetStationTracks, name=L('Lucky Radio'), id='IFL'), title=L('Lucky Radio')))
 
     stations = API.get_all_stations()
     for station in sorted(stations, key = lambda x: int(x.get('recentTimestamp')), reverse=True):
+        do = DirectoryObject(key=Callback(GetStationTracks, name=station['name'], id=station['id']), title=station['name'])
+        if 'imageUrl' in station:
+            do.thumb = station['imageUrl']
+        oc.add(do)
+
+    return oc
+
+################################################################################
+@route(PREFIX + '/mystationsmenu')
+def MyStationsMenu():
+    oc = ObjectContainer(title2=L('My Stations'))
+    oc.add(DirectoryObject(key=Callback(GetStationTracks, name=L('Lucky Radio'), id='IFL'), title=L('Lucky Radio')))
+
+    stations = [station for station in API.get_all_stations() if station.get('inLibrary')] #revised code to factor inLibrary only
+    for station in sorted(stations, key = lambda x: x.get('name')): 
         do = DirectoryObject(key=Callback(GetStationTracks, name=station['name'], id=station['id']), title=station['name'])
         if 'imageUrl' in station:
             do.thumb = station['imageUrl']
